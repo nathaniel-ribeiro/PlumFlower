@@ -23,6 +23,7 @@ class PikafishEngine:
         threading.Thread(target=self._reader_thread, args=(self.engine.stderr,), daemon=True).start()
 
         self.send("uci")
+        self.send("isready")
         self._flush_output(timeout=1)
         self.bestmove = None
 
@@ -46,8 +47,8 @@ class PikafishEngine:
     def set_position(self, fen):
         self.send(f"position fen {fen}")
     
-    def set_move_history(self, move_history):
-        self.send(f"position startpos moves {move_history}")
+    def setup_game(self, moves):
+        self.send(f"position startpos moves {" ".join(moves)}")
 
     def get_best_move(self, depth=15):
         self.bestmove = None
@@ -58,11 +59,9 @@ class PikafishEngine:
                     self.bestmove = line.split()[1]
         return self.bestmove
 
-    @cache
     def evaluate(self, move_history, depth=15):
-        self.set_move_history(move_history)
         score = None
-        ply_count = 0
+        self.setup_game(move_history)
         self.send(f"go depth {depth}")
         while score is None:
             for line in self._flush_output(timeout=0.5):
@@ -94,7 +93,7 @@ def annotate(game):
         engine = PikafishEngine()
 
     for ply in range(len(game.move_history)):
-        score = engine.evaluate(game.move_history[:ply+1])
+        score = engine.evaluate(game.move_history[:ply])
         score_red_perspective = score * (-1)**ply
         print(score_red_perspective)
     print(game.result)
