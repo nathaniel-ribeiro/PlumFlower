@@ -58,19 +58,19 @@ class PikafishEngine:
                     fen = match.group(1)
         return fen
 
-    def get_best_move(self, think_time):
+    def get_best_move(self, depth):
         self.bestmove = None
-        self.send(f"go movetime {think_time}")
+        self.send(f"go depth {depth}")
         while self.bestmove is None:
             for line in self._flush_output(timeout=0.1):
                 if line.startswith("bestmove"):
                     self.bestmove = line.split()[1]
         return self.bestmove
 
-    def evaluate(self, move_history, think_time):
+    def evaluate(self, move_history, depth):
         score = None
         self.setup_game(move_history)
-        self.send(f"go movetime {think_time}")
+        self.send(f"go depth {depth}")
         while score is None:
             for line in self._flush_output(timeout=0.1):
                 # Engine info lines for evaluation look like: "info depth 15 score cp 34 ..."
@@ -91,13 +91,13 @@ class PikafishEngine:
         self.engine.wait()
 
 
-def annotate(game, engine, think_time):
+def annotate(game, engine, depth):
     boards = list()
     evaluations = list()
     red_turn = True
     for ply in range(len(game.move_history)):
         board = engine.get_fen_after_moves(game.move_history[:ply])
-        score = engine.evaluate(game.move_history[:ply], think_time)
+        score = engine.evaluate(game.move_history[:ply], depth)
         score_red_perspective = score if red_turn else -score
         red_turn = not red_turn
 
