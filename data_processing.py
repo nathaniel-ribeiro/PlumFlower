@@ -40,39 +40,38 @@ for filename in filenames:
         games.append(game)
 
 #TODO: remove this, just for testing
-games = games[:1000]
+games = games[:100]
 print("Starting annotations...")
 
 num_workers = cpu_count()
 
 def worker(games_batch):
     engine = PikafishEngine()
-    boards, evaluations = list(), list()
+    boards_for_batch, evaluations_for_batch, game_ids_for_batch = list(), list(), list()
     for game in games_batch:
-        tick2 = time.time()
-        board, evaluation = annotate(game, engine=engine, depth=14)
-        tock2 = time.time()
-        boards.extend(board)
-        evaluations.extend(evaluation)
-        print(f"Worker finished annotating game in {tock2 - tick2:.3f} s")
+        boards_for_game, evaluations_for_game = annotate(game, engine=engine, depth=14)
+        boards_for_batch.extend(boards_for_game)
+        evaluations_for_batch.extend(evaluations_for_game)
+        # add the game id to each board state for that game
+        game_ids_for_batch.extend([game.id for _ in range(len(boards_for_game))])
     engine.quit()
-    return boards, evaluations
+    return game_ids_for_batch, boards_for_batch, evaluations_for_batch
 
-batch_size = min(len(games) // num_workers, 100)
+batch_size = len(games) // num_workers if len(games) % num_workers == 0 else len(games) // num_workers + 1
 batches = [games[i:i+batch_size] for i in range(0, len(games), batch_size)]
 
 tick = time.time()
 with Pool(num_workers) as pool:
-    for boards, evaluations in pool.imap_unordered(worker, batches):
-        df = pd.DataFrame({'FEN': boards, 'Evaluation': evaluations})
+    for game_ids, boards, evaluations in pool.imap_unordered(worker, batches):
+        df = pd.DataFrame({'Game ID': game_ids,'FEN': boards, 'Evaluation': evaluations})
         df.to_csv(
-            'annotated_games.csv',
+            f'{config.DATA_DIR}/annotated_games.csv',
             mode='a',
-            header=not pd.io.common.file_exists('annotated_games.csv'),
+            header=not pd.io.common.file_exists(f'{config.DATA_DIR}/annotated_games.csv'),
             index=False
         )
 
 tock = time.time()
 total_time = tock - tick
 average_time_per_game = total_time / len(games)
-print(f"Projected total time: {(average_time_per_game * 150000) / 3600} hours")
+print(f"Projected total time: {(average_time_per_game * 150000) / 3600:.1f} hours")

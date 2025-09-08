@@ -3,6 +3,7 @@ import threading
 import queue
 import re
 import config
+from functools import cache
 
 class PikafishEngine:
     def __init__(self):
@@ -68,23 +69,27 @@ class PikafishEngine:
         return self.bestmove
 
     def evaluate(self, move_history, depth):
-        score = None
-        self.setup_game(move_history)
-        self.send(f"go depth {depth}")
-        while score is None:
-            for line in self._flush_output(timeout=0.1):
-                # Engine info lines for evaluation look like: "info depth 15 score cp 34 ..."
-                if "score cp" in line:
-                    match = re.search(r"score cp (-?\d+)", line)
-                    if match:
-                        score = int(match.group(1)) / 100.0  # convert centipawns to pawns
-                elif "score mate" in line:
-                    match = re.search(r"score mate (-?\d+)", line)
-                    if match:
-                        score = 1000 if int(match.group(1)) > 0 else -1000
-                if "bestmove" in line:
-                    break
-        return score
+        @cache
+        def _evaluate(move_history_str, depth):
+            score = None
+            self.setup_game(move_history_str.split())
+            self.send(f"go depth {depth}")
+            while score is None:
+                for line in self._flush_output(timeout=0.1):
+                    # Engine info lines for evaluation look like: "info depth 15 score cp 34 ..."
+                    if "score cp" in line:
+                        match = re.search(r"score cp (-?\d+)", line)
+                        if match:
+                            score = int(match.group(1)) / 100.0  # convert centipawns to pawns
+                    elif "score mate" in line:
+                        match = re.search(r"score mate (-?\d+)", line)
+                        if match:
+                            score = 1000 if int(match.group(1)) > 0 else -1000
+                    if "bestmove" in line:
+                        break
+            return score
+        
+        return _evaluate(" ".join(move_history), depth)
 
     def quit(self):
         self.send("quit")
