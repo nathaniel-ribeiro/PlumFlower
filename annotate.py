@@ -3,10 +3,6 @@ import threading
 import queue
 import re
 import config
-from game import Game
-from functools import cache
-
-engine = None
 
 class PikafishEngine:
     def __init__(self):
@@ -48,23 +44,35 @@ class PikafishEngine:
         self.send(f"position fen {fen}")
     
     def setup_game(self, moves):
-        self.send(f"position startpos moves {" ".join(moves)}")
+        move_history = " ".join(moves)
+        self.send(f"position startpos moves {move_history}")
 
-    def get_best_move(self, depth=15):
+    def get_fen_after_moves(self, moves):
+        self.setup_game(moves)
+        self.send("d")
+        fen = None
+        while fen is None:
+            for line in self._flush_output(timeout=0.1):
+                match = re.search(r"Fen: (.+)", line)
+                if match:
+                    fen = match.group(1)
+        return fen
+
+    def get_best_move(self, think_time):
         self.bestmove = None
-        self.send(f"go depth {depth}")
+        self.send(f"go movetime {think_time}")
         while self.bestmove is None:
-            for line in self._flush_output(timeout=0.5):
+            for line in self._flush_output(timeout=0.1):
                 if line.startswith("bestmove"):
                     self.bestmove = line.split()[1]
         return self.bestmove
 
-    def evaluate(self, move_history, depth=15):
+    def evaluate(self, move_history, think_time):
         score = None
         self.setup_game(move_history)
-        self.send(f"go depth {depth}")
+        self.send(f"go movetime {think_time}")
         while score is None:
-            for line in self._flush_output(timeout=0.5):
+            for line in self._flush_output(timeout=0.1):
                 # Engine info lines for evaluation look like: "info depth 15 score cp 34 ..."
                 if "score cp" in line:
                     match = re.search(r"score cp (-?\d+)", line)
@@ -83,18 +91,19 @@ class PikafishEngine:
         self.engine.wait()
 
 
-def annotate(game):
-    global engine
+def annotate(game, engine, think_time):
     boards = list()
     evaluations = list()
-
-    # only spawn one engine to avoid atrocious overhead
-    if engine is None:
-        engine = PikafishEngine()
-
+    red_turn = True
     for ply in range(len(game.move_history)):
-        score = engine.evaluate(game.move_history[:ply])
-        score_red_perspective = score * (-1)**ply
-        print(score_red_perspective)
-    print(game.result)
+        board = engine.get_fen_after_moves(game.move_history[:ply])
+        score = engine.evaluate(game.move_history[:ply], think_time)
+        score_red_perspective = score if red_turn else -score
+        red_turn = not red_turn
+
+        evaluations.append(score_red_perspective)
+        boards.append(board)
+
+    # drop the starting board (ply 0)
+    return boards[1:], evaluations[1:]
 
