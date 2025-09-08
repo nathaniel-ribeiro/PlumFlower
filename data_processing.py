@@ -40,7 +40,7 @@ for filename in filenames:
         games.append(game)
 
 #TODO: remove this, just for testing
-games = games[:100]
+games = games[:1000]
 print("Starting annotations...")
 
 num_workers = cpu_count()
@@ -49,13 +49,16 @@ def worker(games_batch):
     engine = PikafishEngine()
     boards, evaluations = list(), list()
     for game in games_batch:
-        board, evaluation = annotate(game, engine=engine, think_time=500)
+        tick2 = time.time()
+        board, evaluation = annotate(game, engine=engine, depth=14)
+        tock2 = time.time()
         boards.extend(board)
         evaluations.extend(evaluation)
+        print(f"Worker finished annotating game in {tock2 - tick2:.3f} s")
     engine.quit()
     return boards, evaluations
 
-batch_size = 10
+batch_size = min(len(games) // num_workers, 100)
 batches = [games[i:i+batch_size] for i in range(0, len(games), batch_size)]
 
 tick = time.time()
@@ -71,5 +74,5 @@ with Pool(num_workers) as pool:
 
 tock = time.time()
 total_time = tock - tick
-average_time = total_time / len(games)
-print(f"Projected total time: {average_time * 150000} s OR {average_time * 2500} mins OR {average_time * 41.67} hours")
+average_time_per_game = total_time / len(games)
+print(f"Projected total time: {(average_time_per_game * 150000) / 3600} hours")
