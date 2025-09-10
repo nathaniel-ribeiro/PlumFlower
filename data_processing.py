@@ -43,8 +43,6 @@ for filename in filenames:
 games = games[:100]
 print("Starting annotations...")
 
-num_workers = 1
-
 def worker(games_batch):
     engine = PikafishEngine(threads=config.PIKAFISH_THREADS)
     boards_for_batch, evaluations_for_batch, game_ids_for_batch = list(), list(), list()
@@ -57,11 +55,11 @@ def worker(games_batch):
     engine.quit()
     return game_ids_for_batch, boards_for_batch, evaluations_for_batch
 
-batch_size = len(games) // num_workers if len(games) % num_workers == 0 else len(games) // num_workers + 1
+batch_size = len(games) // config.NUM_WORKERS if len(games) % config.NUM_WORKERS == 0 else len(games) // config.NUM_WORKERS + 1
 batches = [games[i:i+batch_size] for i in range(0, len(games), batch_size)]
 
 tick = time.time()
-with Pool(num_workers) as pool:
+with Pool(config.NUM_WORKERS) as pool:
     for game_ids, boards, evaluations in pool.imap_unordered(worker, batches):
         df = pd.DataFrame({'Game ID': game_ids,'FEN': boards, 'Evaluation': evaluations})
         df.to_csv(
