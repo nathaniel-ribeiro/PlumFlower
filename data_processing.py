@@ -43,13 +43,13 @@ for filename in filenames:
 games = games[:100]
 print("Starting annotations...")
 
-num_workers = cpu_count()
+num_workers = 1
 
 def worker(games_batch):
-    engine = PikafishEngine()
+    engine = PikafishEngine(threads=config.PIKAFISH_THREADS)
     boards_for_batch, evaluations_for_batch, game_ids_for_batch = list(), list(), list()
     for game in games_batch:
-        boards_for_game, evaluations_for_game = annotate(game, engine=engine, depth=14)
+        boards_for_game, evaluations_for_game = annotate(game, engine=engine, think_time=config.PIKAFISH_MOVETIME_MS)
         boards_for_batch.extend(boards_for_game)
         evaluations_for_batch.extend(evaluations_for_game)
         # add the game id to each board state for that game
@@ -74,4 +74,3 @@ with Pool(num_workers) as pool:
 tock = time.time()
 total_time = tock - tick
 average_time_per_game = total_time / len(games)
-print(f"Projected total time: {(average_time_per_game * 150000) / 3600:.1f} hours")

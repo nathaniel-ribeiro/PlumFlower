@@ -6,7 +6,7 @@ import config
 from functools import cache
 
 class PikafishEngine:
-    def __init__(self):
+    def __init__(self, threads):
         self.engine = subprocess.Popen(
             [config.PATH_TO_PIKAFISH_BINARY],
             stdin=subprocess.PIPE,
@@ -19,6 +19,7 @@ class PikafishEngine:
         threading.Thread(target=self._reader_thread, args=(self.engine.stdout,), daemon=True).start()
         threading.Thread(target=self._reader_thread, args=(self.engine.stderr,), daemon=True).start()
 
+        self.send(f"setoption name Threads value {threads}")
         self.send("uci")
         self.send("isready")
         self._flush_output(timeout=1)
@@ -59,21 +60,21 @@ class PikafishEngine:
                     fen = match.group(1)
         return fen
 
-    def get_best_move(self, depth):
+    def get_best_move(self, think_time):
         self.bestmove = None
-        self.send(f"go depth {depth}")
+        self.send(f"go movetime {think_time}")
         while self.bestmove is None:
             for line in self._flush_output(timeout=0.1):
                 if line.startswith("bestmove"):
                     self.bestmove = line.split()[1]
         return self.bestmove
 
-    def evaluate(self, move_history, depth):
+    def evaluate(self, move_history, think_time):
         @cache
-        def _evaluate(move_history_str, depth):
+        def _evaluate(move_history_str, think_time):
             score = None
             self.setup_game(move_history_str.split())
-            self.send(f"go depth {depth}")
+            self.send(f"go movetime {think_time}")
             while score is None:
                 for line in self._flush_output(timeout=0.1):
                     # Engine info lines for evaluation look like: "info depth 15 score cp 34 ..."
@@ -89,20 +90,20 @@ class PikafishEngine:
                         break
             return score
         
-        return _evaluate(" ".join(move_history), depth)
+        return _evaluate(" ".join(move_history), think_time)
 
     def quit(self):
         self.send("quit")
         self.engine.wait()
 
 
-def annotate(game, engine, depth):
+def annotate(game, engine, think_time):
     boards = list()
     evaluations = list()
     red_turn = True
     for ply in range(len(game.move_history)):
         board = engine.get_fen_after_moves(game.move_history[:ply])
-        score = engine.evaluate(game.move_history[:ply], depth)
+        score = engine.evaluate(game.move_history[:ply], think_time)
         score_red_perspective = score if red_turn else -score
         red_turn = not red_turn
 
