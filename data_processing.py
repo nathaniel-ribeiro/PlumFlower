@@ -72,3 +72,6 @@ with Pool(config.NUM_WORKERS) as pool:
 tock = time.time()
 total_time = tock - tick
 average_time_per_game = total_time / len(games)
+expected_total_seconds = average_time_per_game * 150000
+expected_hours = expected_total_seconds / 3600
+print(f"Expected time for annotating 150k games: {expected_hours:.1f} h")
