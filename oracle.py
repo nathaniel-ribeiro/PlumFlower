@@ -103,7 +103,7 @@ class PikafishEngine:
 
 
 
-def annotate(game, engine, think_time):
+def annotate_game(game, engine, think_time):
     boards = list()
     evaluations = list()
     red_turn = True
