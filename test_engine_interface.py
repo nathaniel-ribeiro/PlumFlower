@@ -1,5 +1,5 @@
 import numpy as np
-from annotate import PikafishEngine
+from oracle import PikafishEngine
 from multiprocessing import cpu_count
 import time
 from tqdm import tqdm

@@ -1,7 +1,7 @@
 import subprocess
 from game import Game
 import re
-from annotate import annotate, PikafishEngine
+from oracle import annotate, PikafishEngine
 import pandas as pd
 import config
 from tqdm import tqdm
