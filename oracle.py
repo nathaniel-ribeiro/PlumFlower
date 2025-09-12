@@ -3,7 +3,6 @@ import threading
 import queue
 import re
 import config
-from functools import cache
 
 class PikafishEngine:
     def __init__(self, threads):

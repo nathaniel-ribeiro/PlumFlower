@@ -1,7 +1,7 @@
 import subprocess
 from game import Game
 import re
-from oracle import annotate, PikafishEngine
+from oracle import annotate_game, PikafishEngine
 import pandas as pd
 import config
 from tqdm import tqdm
@@ -45,7 +45,7 @@ def worker(games_batch):
     engine = PikafishEngine(threads=config.PIKAFISH_THREADS)
     boards_for_batch, evaluations_for_batch, game_ids_for_batch = list(), list(), list()
     for game in games_batch:
-        boards_for_game, evaluations_for_game = annotate(game, engine=engine, think_time=config.PIKAFISH_MOVETIME_MS)
+        boards_for_game, evaluations_for_game = annotate_game(game, engine=engine, think_time=config.PIKAFISH_MOVETIME_MS)
         boards_for_batch.extend(boards_for_game)
         evaluations_for_batch.extend(evaluations_for_game)
         # add the game id to each board state for that game
