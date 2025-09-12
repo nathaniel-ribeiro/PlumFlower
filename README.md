@@ -8,4 +8,4 @@ Rishi (Sanskrit: ऋषि), meaning sage or one who can see divine knowledge in
 [150k tournament games](https://github.com/CGLemon/chinese-chess-PGN)
 
 ## Acknowledgments
-A huge thank you to the Xiangqi.com community for directing me towards helpful resources and being very accomodating! Thank you to CGLemon on GitHub for curating a PGN-format dataset of games.
+A huge thank you to the Xiangqi.com community for directing us towards helpful resources and being very accomodating! Thank you to CGLemon on GitHub for curating a PGN-format dataset of games.
