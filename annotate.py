@@ -13,7 +13,7 @@ class PikafishEngine:
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
-            bufsize=4096  # larger buffer to reduce partial reads
+            bufsize=4096
         )
 
         self.output_queue = queue.Queue()

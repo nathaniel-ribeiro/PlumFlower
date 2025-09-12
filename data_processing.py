@@ -39,8 +39,6 @@ for filename in filenames:
         game = Game(moves, *metadata.values())
         games.append(game)
 
-#TODO: remove this
-games = games[:32]
 print("Starting annotations...")
 
 def worker(games_batch):
@@ -55,7 +53,7 @@ def worker(games_batch):
     engine.quit()
     return game_ids_for_batch, boards_for_batch, evaluations_for_batch
 
-batch_size = 1
+batch_size = 64
 batches = [games[i:i+batch_size] for i in range(0, len(games), batch_size)]
 
 tick = time.time()
