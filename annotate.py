@@ -28,11 +28,11 @@ class PikafishEngine:
             daemon=True
         ).start()
 
-        self.send(f"setoption name Threads value {threads}")
         self.send("uci")
         self._wait_for("uciok")
         self.send("isready")
         self._wait_for("readyok")
+        self.send(f"setoption name Threads value {threads}")
         self.bestmove = None
 
     def _reader_thread(self, pipe):
@@ -56,9 +56,9 @@ class PikafishEngine:
     def set_position(self, fen):
         self.send(f"position fen {fen}")
 
-    def setup_game(self, moves):
-        move_history = " ".join(moves)
-        self.send(f"position startpos moves {move_history}")
+    def setup_game(self, move_history):
+        moves = " ".join(move_history)
+        self.send(f"position startpos moves {moves}")
 
     def get_fen_after_moves(self, moves):
         self.setup_game(moves)
@@ -81,12 +81,7 @@ class PikafishEngine:
         return None
 
     def evaluate(self, move_history, think_time):
-        key = " ".join(move_history)
-        return self._evaluate_cached(key, think_time)
-
-    @cache
-    def _evaluate_cached(self, move_history_str, think_time):
-        self.setup_game(move_history_str.split())
+        self.setup_game(move_history)
         self.send(f"go movetime {think_time}")
         lines = self._wait_for("bestmove")
         score = None
@@ -98,7 +93,8 @@ class PikafishEngine:
             elif "score mate" in line:
                 match = re.search(r"score mate (-?\d+)", line)
                 if match:
-                    score = 1000 if int(match.group(1)) > 0 else -1000
+                    mate_in_n = int(match.group(1))
+                    score = f"M{mate_in_n}" if mate_in_n > 0 else f"-M{abs(mate_in_n)}"
         return score
 
     def quit(self):
@@ -114,7 +110,11 @@ def annotate(game, engine, think_time):
     for ply in range(len(game.move_history)):
         board = engine.get_fen_after_moves(game.move_history[:ply])
         score = engine.evaluate(game.move_history[:ply], think_time)
-        score_red_perspective = score if red_turn else -score
+        # score could be a number or string indicating mate
+        if type(score) is float:
+            score_red_perspective = score if red_turn else -score
+        elif type(score) is str:
+            score_red_perspective = score if red_turn else (score[1:] if score.startswith("-") else f"-{score}")
         red_turn = not red_turn
 
         evaluations.append(score_red_perspective)

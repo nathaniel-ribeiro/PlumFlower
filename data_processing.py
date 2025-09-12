@@ -39,6 +39,8 @@ for filename in filenames:
         game = Game(moves, *metadata.values())
         games.append(game)
 
+#TODO: remove this
+games = games[:32]
 print("Starting annotations...")
 
 def worker(games_batch):
@@ -53,12 +55,12 @@ def worker(games_batch):
     engine.quit()
     return game_ids_for_batch, boards_for_batch, evaluations_for_batch
 
-batch_size = len(games) // config.NUM_WORKERS if len(games) % config.NUM_WORKERS == 0 else len(games) // config.NUM_WORKERS + 1
+batch_size = 1
 batches = [games[i:i+batch_size] for i in range(0, len(games), batch_size)]
 
 tick = time.time()
 with Pool(config.NUM_WORKERS) as pool:
-    for game_ids, boards, evaluations in pool.imap_unordered(worker, batches):
+    for game_ids, boards, evaluations in tqdm(pool.imap_unordered(worker, batches), total=max(len(games) // batch_size, 1)):
         df = pd.DataFrame({'Game ID': game_ids,'FEN': boards, 'Evaluation': evaluations})
         df.to_csv(
             f'{config.DATA_DIR}/annotated_games.csv',
