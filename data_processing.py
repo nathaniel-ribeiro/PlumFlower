@@ -43,38 +43,28 @@ for filename in filenames:
         game = Game(moves, *metadata.values())
         games.append(game)
 
-#TODO: remove this
-games = games[:1024]
 print("Starting annotations...")
 
 def worker(args):
-    games_batch, me = args
+    indices, me = args
     engine = PikafishEngine(threads=config.PIKAFISH_THREADS)
 
-    out_path = os.path.join(
-        config.DATA_DIR,
-        f"annotated_worker_{me}.csv"
-    )
-
+    out_path = os.path.join(config.DATA_DIR, f"annotated_worker_{me}.csv")
     with open(out_path, "w", encoding="utf-8") as f:
-        # write header once per file
         f.write("Game ID,FEN,Evaluation\n")
-
-        for game in games_batch:
-            boards, evals = annotate_game(
-                game, engine=engine, think_time=config.PIKAFISH_MOVETIME_MS
-            )
+        for idx in indices:
+            game = games[idx]   # games is global and already in memory
+            boards, evals = annotate_game(game, engine=engine,
+                                          think_time=config.PIKAFISH_MOVETIME_MS)
             for fen, val in zip(boards, evals):
                 f.write(f"{game.id},{fen},{val}\n")
-
     engine.quit()
     return out_path
 
 n = len(games)
 batch_size = math.ceil(n / config.NUM_WORKERS)
-
 batches = [
-    (games[i*batch_size:(i+1)*batch_size], i)
+    (range(i*batch_size, min((i+1)*batch_size, n)), i)
     for i in range(config.NUM_WORKERS)
 ]
 
