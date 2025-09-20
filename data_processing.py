@@ -6,7 +6,7 @@ import pandas as pd
 import config
 from tqdm import tqdm
 import multiprocessing as mp
-from multiprocessing import Pool, cpu_count
+from multiprocessing import Pool
 import time
 
 # extract all PGN game files
@@ -53,8 +53,12 @@ def worker(games_batch):
     engine.quit()
     return game_ids_for_batch, boards_for_batch, evaluations_for_batch
 
-batch_size = 64
-batches = [games[i:i+batch_size] for i in range(0, len(games), batch_size)]
+batch_size = 16
+batches = (games[i:i+batch_size] for i in range(0, len(games), batch_size))
+
+# dummy df to write the headers
+df = pd.DataFrame({'Game ID': [], 'FEN': [], 'Evaluation': []})
+df.to_csv(f'{config.DATA_DIR}/annotated_games.csv', index=False)
 
 tick = time.time()
 with Pool(config.NUM_WORKERS) as pool:
@@ -63,7 +67,7 @@ with Pool(config.NUM_WORKERS) as pool:
         df.to_csv(
             f'{config.DATA_DIR}/annotated_games.csv',
             mode='a',
-            header=not pd.io.common.file_exists(f'{config.DATA_DIR}/annotated_games.csv'),
+            header=False,
             index=False
         )
 
