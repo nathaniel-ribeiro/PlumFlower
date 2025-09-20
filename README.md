@@ -7,5 +7,10 @@ Rishi (Sanskrit: ऋषि), meaning sage or one who can see divine knowledge in
 ## Data used
 [150k tournament games](https://github.com/CGLemon/chinese-chess-PGN)
 
+## Troubleshooting
+Encountering a broken pipe error when using the ```PikafishEngine``` interface? Ensure whatever compiler you used to build Pikafish is loaded.
+
+OOM errors in SLURM or job hangs unexpectedly? Reduce ```NUM_WORKERS``` in ```config.py```, overly large values can trigger SLURM errors (reason not exactly known).
+
 ## Acknowledgments
 A huge thank you to the Xiangqi.com community for directing us towards helpful resources and being very accomodating! Thank you to CGLemon on GitHub for curating a PGN-format dataset of games.

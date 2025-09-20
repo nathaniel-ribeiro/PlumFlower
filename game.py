@@ -1,10 +1,10 @@
-from uuid import uuid4
+import shortuuid 
 
 class Game:
     def __init__(self, move_history, game_type="Chinese Chess", event=None, site=None, date=None, round_num=None, red_team=None, 
                  red=None, black_team=None, black=None, result=None, opening=None, 
                  startpos_fen="rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR w - - 0 1", move_format=None):
-        self.id = uuid4()
+        self.id = shortuuid.uuid()
         self.game = game_type
         self.event = event
         self.site = site
