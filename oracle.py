@@ -118,7 +118,6 @@ def annotate_game(game, engine, think_time):
 
         evaluations.append(score_red_perspective)
         boards.append(board)
-
-    # drop the starting board (ply 0)
-    return boards[1:], evaluations[1:]
+        
+    return boards, evaluations
 
