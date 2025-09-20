@@ -58,6 +58,7 @@ def worker(args):
                                           think_time=config.PIKAFISH_MOVETIME_MS)
             for fen, val in zip(boards, evals):
                 f.write(f"{game.id},{fen},{val}\n")
+            f.flush()
     engine.quit()
     return out_path
 
