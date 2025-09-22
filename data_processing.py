@@ -1,13 +1,17 @@
 import subprocess
 from game import Game
 import re
-from annotate import annotate, PikafishEngine
+from oracle import annotate_game, PikafishEngine
 import pandas as pd
 import config
 from tqdm import tqdm
 import multiprocessing as mp
-from multiprocessing import Pool, cpu_count
+from multiprocessing import Pool
 import time
+import os
+import shutil
+import polars as pl
+import math
 
 # extract all PGN game files
 result = subprocess.run(f"find {config.DATA_DIR} -type f -name '*.pgns'", shell=True, check=True, capture_output=True)
@@ -41,35 +45,50 @@ for filename in filenames:
 
 print("Starting annotations...")
 
-def worker(games_batch):
+def worker(args):
+    indices, me = args
     engine = PikafishEngine(threads=config.PIKAFISH_THREADS)
-    boards_for_batch, evaluations_for_batch, game_ids_for_batch = list(), list(), list()
-    for game in games_batch:
-        boards_for_game, evaluations_for_game = annotate(game, engine=engine, think_time=config.PIKAFISH_MOVETIME_MS)
-        boards_for_batch.extend(boards_for_game)
-        evaluations_for_batch.extend(evaluations_for_game)
-        # add the game id to each board state for that game
-        game_ids_for_batch.extend([game.id for _ in range(len(boards_for_game))])
+
+    out_path = os.path.join(config.DATA_DIR, f"annotated_worker_{me}.csv")
+    with open(out_path, "w", encoding="utf-8") as f:
+        f.write("Game ID,FEN,Evaluation\n")
+        for idx in indices:
+            game = games[idx]   # games is global and already in memory
+            boards, evals = annotate_game(game, engine=engine,
+                                          think_time=config.PIKAFISH_MOVETIME_MS)
+            for fen, val in zip(boards, evals):
+                f.write(f"{game.id},{fen},{val}\n")
+            f.flush()
     engine.quit()
-    return game_ids_for_batch, boards_for_batch, evaluations_for_batch
+    return out_path
 
-batch_size = 64
-batches = [games[i:i+batch_size] for i in range(0, len(games), batch_size)]
+n = len(games)
+batch_size = math.ceil(n / config.NUM_WORKERS)
+batches = [
+    (range(i*batch_size, min((i+1)*batch_size, n)), i)
+    for i in range(config.NUM_WORKERS)
+]
 
-tick = time.time()
 with Pool(config.NUM_WORKERS) as pool:
-    for game_ids, boards, evaluations in tqdm(pool.imap_unordered(worker, batches), total=max(len(games) // batch_size, 1)):
-        df = pd.DataFrame({'Game ID': game_ids,'FEN': boards, 'Evaluation': evaluations})
-        df.to_csv(
-            f'{config.DATA_DIR}/annotated_games.csv',
-            mode='a',
-            header=not pd.io.common.file_exists(f'{config.DATA_DIR}/annotated_games.csv'),
-            index=False
-        )
+    # each worker writes directly to its own CSV file
+    partial_files = list(tqdm(pool.imap_unordered(worker, batches), total=config.NUM_WORKERS))
 
-tock = time.time()
-total_time = tock - tick
-average_time_per_game = total_time / len(games)
-expected_total_seconds = average_time_per_game * 150000
-expected_hours = expected_total_seconds / 3600
-print(f"Expected time for annotating 150k games: {expected_hours:.1f} h")
+aggregated_path = f"{config.DATA_DIR}/annotated_games.csv"
+
+# combine results of workers
+with open(aggregated_path, "w", encoding="utf-8") as fout:
+    fout.write("Game ID,FEN,Evaluation\n")
+
+    for tmp_path in partial_files:
+        with open(tmp_path, "r", encoding="utf-8") as fin:
+            next(fin)
+            shutil.copyfileobj(fin, fout)
+
+# cleanup
+for f in partial_files:
+    os.remove(f)
+
+# deduplicate board states
+final_path = f"{config.DATA_DIR}/annotated_games_deduplicated.csv"
+# specify schema to be all strings since evaluation can be a number or "M..."
+pl.scan_csv(aggregated_path, schema={"Game ID": pl.String, "FEN": pl.String, "Evaluation": pl.String}).unique(subset=["FEN"]).collect(engine="streaming").write_csv(final_path)

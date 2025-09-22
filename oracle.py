@@ -3,7 +3,6 @@ import threading
 import queue
 import re
 import config
-from functools import cache
 
 class PikafishEngine:
     def __init__(self, threads):
@@ -103,7 +102,7 @@ class PikafishEngine:
 
 
 
-def annotate(game, engine, think_time):
+def annotate_game(game, engine, think_time):
     boards = list()
     evaluations = list()
     red_turn = True
@@ -119,7 +118,6 @@ def annotate(game, engine, think_time):
 
         evaluations.append(score_red_perspective)
         boards.append(board)
-
-    # drop the starting board (ply 0)
-    return boards[1:], evaluations[1:]
+        
+    return boards, evaluations
 
