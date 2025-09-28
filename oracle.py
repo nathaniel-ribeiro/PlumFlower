@@ -32,6 +32,8 @@ class PikafishEngine:
         self.send("isready")
         self._wait_for("readyok")
         self.send(f"setoption name Threads value {threads}")
+        self._wait_for("info string Using")
+        self.send("setoption name UCI_ShowWDL value true")
         self.bestmove = None
 
     def _reader_thread(self, pipe):

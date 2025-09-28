@@ -1,13 +1,12 @@
 import re
 
-#TODO: can't re-use symbol for black and black elephant
 VOCAB = ['r', 'n', 'b', 'a',
          'k', 'c', 'R', 'N',
          'B', 'A', 'K', 'C',
-         '.', 'w', 'b', '0',
+         '.', 'w', '0',
          '1', '2', '3', '4',
          '5', '6', '7', '8',
-         '9', '-']
+         '9']
 
 class FENTokenizer:
     def __init__(self):
@@ -36,7 +35,7 @@ class FENTokenizer:
                 tokenized += match.group(10)
                 # pad moves since capture to be 2 digits
                 tokenized += "." + match.group(11) if len(match.group(11)) == 1 else match.group(11)
-                # pad half move clock to be 2 digits
+                # pad half move clock to be 3 digits
                 tokenized += "." + match.group(12) if len(match.group(12)) == 1 else match.group(12)
             
             tokenized_batch[i] = tokenized
