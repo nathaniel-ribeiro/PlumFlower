@@ -43,9 +43,6 @@ for filename in filenames:
         game = Game(moves, *metadata.values())
         games.append(game)
 
-#TODO: remove this
-games = games[:100]
-
 print("Starting annotations...")
 
 def worker(args):
