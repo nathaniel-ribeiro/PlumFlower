@@ -21,6 +21,7 @@ class PikafishEngine:
             args=(self.engine.stdout,),
             daemon=True
         ).start()
+
         threading.Thread(
             target=self._reader_thread,
             args=(self.engine.stderr,),
@@ -82,21 +83,36 @@ class PikafishEngine:
         return None
 
     def evaluate(self, move_history, think_time):
+        '''
+        @param move_history: list of moves in long algebraic notation to setup position
+        @param think_time: how long should Pikafish think before giving an evaluation?
+        returns: tuple containing centipawn evaluation (unnormalized) and wdl probabilities (normalized)
+
+        Evaluates the board resulting from the given move_history using Pikafish. 
+        Evaluations are from *current* player's perspective.
+        '''
         self.setup_game(move_history)
         self.send(f"go movetime {think_time}")
         lines = self._wait_for("bestmove")
-        score = None
+        centipawns, win_prob, draw_prob, lose_prob = None
         for line in lines:
             if "score cp" in line:
                 match = re.search(r"score cp (-?\d+)", line)
                 if match:
-                    score = int(match.group(1)) / 100.0
+                    centipawns = int(match.group(1))
             elif "score mate" in line:
                 match = re.search(r"score mate (-?\d+)", line)
                 if match:
                     mate_in_n = int(match.group(1))
-                    score = f"M{mate_in_n}" if mate_in_n > 0 else f"-M{abs(mate_in_n)}"
-        return score
+                    centipawns = f"M{mate_in_n}" if mate_in_n > 0 else f"-M{abs(mate_in_n)}"
+            
+            if "wdl" in line:
+                match = re.search("wdl (\d) (\d) (\d)")
+                if match:
+                    win_prob = int(match.group(1)) / 1000
+                    draw_prob = int(match.group(2)) / 1000
+                    draw_prob = int(match.group(3)) / 1000
+        return centipawns, win_prob, draw_prob, lose_prob
 
     def quit(self):
         self.send("quit")
@@ -107,18 +123,11 @@ class PikafishEngine:
 def annotate_game(game, engine, think_time):
     boards = list()
     evaluations = list()
-    red_turn = True
+
     for ply in range(len(game.move_history)):
         board = engine.get_fen_after_moves(game.move_history[:ply])
-        score = engine.evaluate(game.move_history[:ply], think_time)
-        # score could be a number or string indicating mate
-        if type(score) is float:
-            score_red_perspective = score if red_turn else -score
-        elif type(score) is str:
-            score_red_perspective = score if red_turn else (score[1:] if score.startswith("-") else f"-{score}")
-        red_turn = not red_turn
-
-        evaluations.append(score_red_perspective)
+        centipawns, win_prob, draw_prob, lose_prob = engine.evaluate(game.move_history[:ply], think_time)
+        evaluations.append(centipawns, win_prob, draw_prob, lose_prob)
         boards.append(board)
         
     return boards, evaluations
