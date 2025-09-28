@@ -94,8 +94,14 @@ class PikafishEngine:
         self.setup_game(move_history)
         self.send(f"go movetime {think_time}")
         lines = self._wait_for("bestmove")
-        centipawns, win_prob, draw_prob, lose_prob = None
+        centipawns, win_prob, draw_prob, lose_prob = None, None, None, None
         for line in lines:
+            if "wdl" in line:
+                match = re.search(r"wdl (\d+) (\d+) (\d+)", line)
+                if match:
+                    win_prob = int(match.group(1)) / 1000
+                    draw_prob = int(match.group(2)) / 1000
+                    lose_prob = int(match.group(3)) / 1000
             if "score cp" in line:
                 match = re.search(r"score cp (-?\d+)", line)
                 if match:
@@ -105,13 +111,6 @@ class PikafishEngine:
                 if match:
                     mate_in_n = int(match.group(1))
                     centipawns = f"M{mate_in_n}" if mate_in_n > 0 else f"-M{abs(mate_in_n)}"
-            
-            if "wdl" in line:
-                match = re.search("wdl (\d) (\d) (\d)")
-                if match:
-                    win_prob = int(match.group(1)) / 1000
-                    draw_prob = int(match.group(2)) / 1000
-                    draw_prob = int(match.group(3)) / 1000
         return centipawns, win_prob, draw_prob, lose_prob
 
     def quit(self):
@@ -127,7 +126,7 @@ def annotate_game(game, engine, think_time):
     for ply in range(len(game.move_history)):
         board = engine.get_fen_after_moves(game.move_history[:ply])
         centipawns, win_prob, draw_prob, lose_prob = engine.evaluate(game.move_history[:ply], think_time)
-        evaluations.append(centipawns, win_prob, draw_prob, lose_prob)
+        evaluations.append((centipawns, win_prob, draw_prob, lose_prob))
         boards.append(board)
         
     return boards, evaluations
