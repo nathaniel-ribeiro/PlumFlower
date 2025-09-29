@@ -59,6 +59,25 @@ class PikafishEngine:
         moves = " ".join(move_history)
         self.send(f"position startpos moves {moves}")
 
+    #Send ucinewgame
+    def new_game(self):
+        self.send("ucinewgame"); 
+        self.send("isready"); 
+        self._wait_for("readyok")
+
+    #Play 1 move from a given FEN and return the new FEN
+    def play_move(self, fen, move):
+        self.send(f"position fen {fen} moves {move}")
+        self.send("d")
+        lines = self._wait_for("Fen:")
+        fen = None
+        for line in lines:
+            match = re.search(r"Fen: (.+)", line)
+            if match:
+                fen = match.group(1)
+                break
+        return fen
+
     def get_fen_after_moves(self, moves):
         self.setup_game(moves)
         self.send("d")
