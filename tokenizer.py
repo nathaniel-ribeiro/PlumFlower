@@ -1,5 +1,4 @@
 import re
-import bidict
 
 class BoardTokenizer:
     def __init__(self):
@@ -12,6 +11,7 @@ class BoardTokenizer:
             tokenized = None
             if match:
                 rows = "".join([re.sub(r'\d', lambda match: "." * int(match), match.group(i)) for i in range(10)])
+                #TODO: disambiguate black to move from black elephant?
                 whose_turn = match.group(10)
                 capture_clock = match.group(11).zfill(2)
                 halfmove_clock = match.group(12).zfill(3)
