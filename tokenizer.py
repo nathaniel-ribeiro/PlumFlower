@@ -16,27 +16,13 @@ class FENTokenizer:
         tokenized_batch = [None] * len(fen_batch)
         for i, fen in enumerate(fen_batch):
             match = re.search(r'([rnbakcRNBAKC0-9]/){9}([rnbakcRNBAKC0-9]) ([wb]) - - (\d+) (\d+)', fen)
-            tokenized = ""
+            tokenized = None
             if match:
-                # groups 0 through 9 -> rows of the board
-                # group 10 -> whose turn
-                # group 11 -> moves since capture or pawn move
-                # group 12 -> halfmove clock
-                rows = [match.group(i) for i in range(10)]
-                for row in rows:
-                    for char in row:
-                        # digit represents number of blank spaces
-                        if char.isdigit():
-                            tokenized += ("." * int(char))
-                        else:
-                            tokenized += char
-                
-                #whose turn
-                tokenized += match.group(10)
-                # pad moves since capture to be 2 digits
-                tokenized += "." + match.group(11) if len(match.group(11)) == 1 else match.group(11)
-                # pad half move clock to be 3 digits
-                tokenized += "." + match.group(12) if len(match.group(12)) == 1 else match.group(12)
+                rows = [re.sub(r'\d', lambda match: "." * int(match), match.group(i)) for i in range(10)]
+                whose_turn = match.group(10)
+                capture_clock = match.group(11).zfill(2)
+                halfmove_clock = match.group(12).zfill(3)
+                tokenized = rows.split() + [whose_turn] + capture_clock.split() + halfmove_clock.split()
             
             tokenized_batch[i] = tokenized
         return tokenized_batch

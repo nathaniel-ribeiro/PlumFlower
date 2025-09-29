@@ -11,4 +11,4 @@ DATA_DIR = "./data"
 # time that engine will think before producing the best move. Deepmind used 50 ms
 PIKAFISH_MOVETIME_MS = 50
 # Stockfish/Pikafish recommends num_cores * 2 - 1
-PIKAFISH_THREADS = 4
+PIKAFISH_THREADS = (cpu_count() * 2 - 2) // NUM_WORKERS
