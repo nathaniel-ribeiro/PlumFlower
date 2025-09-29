@@ -54,6 +54,11 @@ class PikafishEngine:
             if token in line:
                 break
         return lines
+    
+    def new_game(self):
+        self.send("ucinewgame")
+        self.send("isready")
+        _ = self._wait_for("readyok")
 
     def set_position(self, fen):
         self.send(f"position fen {fen}")

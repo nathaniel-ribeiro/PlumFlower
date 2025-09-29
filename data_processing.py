@@ -54,6 +54,7 @@ def worker(args):
         f.write("Game ID,FEN,CP,Win_Probability,Draw_Probability,Lose_Probability\n")
         for idx in indices:
             game = games[idx]
+            engine.new_game()
             boards, evaluations = annotate_game(game, engine=engine,
                                           think_time=config.PIKAFISH_MOVETIME_MS)
             for fen, evaluation in zip(boards, evaluations):
