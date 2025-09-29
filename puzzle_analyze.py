@@ -36,20 +36,19 @@ def Full_Puzzle_Test():
             if best_move != solution[i]:
                 puzzle_solved = False
                 break
-            fen = engine.play_move(fen, best_move)
-            if i+1 < len(solution):
-                fen = engine.play_move(fen, solution[i+1])
+            preset.append(best_move)
+            engine.play_moves(fen,tuple(solution[:i+2]))
 
-        result_log = "Puzzle "+ str(Puzzle_Count) + " | pid = " + pid 
+        result_log = "Puzzle "+ str(Puzzle_Count) + " | pid = " + pid #+ " | category = " + group["category"].iloc[0]
 
         if(puzzle_solved): 
             Success += 1
             print(result_log + " | Success")
-            results.append({"puzzle_index": Puzzle_Count, "pid": pid, "result": "Success"})
+            results.append({"puzzle_index": Puzzle_Count, "pid": pid, "category": group["category"].iloc[0], "result": "Success"})
         else: 
             Fail += 1
             print(result_log + " | Fail")
-            results.append({"puzzle_index": Puzzle_Count, "pid": pid, "result": "Fail"})
+            results.append({"puzzle_index": Puzzle_Count, "pid": pid, "category": group["category"].iloc[0], "result": "Fail"})
         Puzzle_Count += 1
 
     print("Success : "+ str(Success))
@@ -83,6 +82,9 @@ def Puzzle_Test(pid):
     fen = engine.get_fen_after_moves(preset)
     print(fen)
 
+    engine.new_game()
+    engine.set_position(fen)
+        
     #Consider only 1 side from the solution sequence
     puzzle_solved = True
     for i in range(0,len(solution),2):
@@ -93,9 +95,7 @@ def Puzzle_Test(pid):
         if best_move != solution[i]:
             puzzle_solved = False
             break
-        fen = engine.play_move(fen, best_move)
-        if i+1 < len(solution):
-            fen = engine.play_move(fen, solution[i+1])
+        engine.play_moves(fen,tuple(solution[:i+2]))
 
     if(puzzle_solved): print("Success")
     else:print("Fail")

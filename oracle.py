@@ -65,9 +65,10 @@ class PikafishEngine:
         self.send("isready"); 
         self._wait_for("readyok")
 
-    #Play 1 move from a given FEN and return the new FEN
-    def play_move(self, fen, move):
-        self.send(f"position fen {fen} moves {move}")
+    #Play moves from a given FEN and return the new FEN
+    def play_moves(self, fen, moves):
+        moves_str = " ".join(moves)
+        self.send(f"position fen {fen} moves {moves_str}")
         self.send("d")
         lines = self._wait_for("Fen:")
         fen = None
