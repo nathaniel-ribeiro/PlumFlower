@@ -29,11 +29,11 @@ class PikafishEngine:
         ).start()
 
         self.send("uci")
-        self._wait_for("uciok")
+        _ = self._wait_for("uciok")
         self.send("isready")
-        self._wait_for("readyok")
+        _ = self._wait_for("readyok")
         self.send(f"setoption name Threads value {threads}")
-        self._wait_for("info string Using")
+        _ = self._wait_for("info string Using")
         self.send("setoption name UCI_ShowWDL value true")
         self.bestmove = None
 
