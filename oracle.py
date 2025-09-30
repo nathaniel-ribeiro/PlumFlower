@@ -116,6 +116,15 @@ class PikafishEngine:
                 if match:
                     mate_in_n = int(match.group(1))
                     centipawns = f"M{mate_in_n}" if mate_in_n > 0 else f"-M{abs(mate_in_n)}"
+                # handle cases where we/they are already checkmated
+                if centipawns == "M0":
+                    win_prob = 1.0
+                    draw_prob = 0.0
+                    lose_prob = 0.0
+                elif centipawns == "-M0":
+                    win_prob = 0.0
+                    draw_prob = 0.0
+                    lose_prob = 1.0
         return centipawns, win_prob, draw_prob, lose_prob
 
     def quit(self):
