@@ -11,8 +11,12 @@ class BoardTokenizer:
             tokenized = None
             if match:
                 rows = "".join([re.sub(r'\d', lambda match: "." * int(match), match.group(i)) for i in range(10)])
-                #TODO: disambiguate black to move from black elephant?
+                # uses e and E to denote black and red elephants rather than b (already used in FEN to show black to move)
+                rows = rows.replace("b", "e")
+                rows = rows.replace("B", "E")
+                
                 whose_turn = match.group(10)
+                # left pad with zeros to ensure a fixed length
                 capture_clock = match.group(11).zfill(2)
                 halfmove_clock = match.group(12).zfill(3)
                 tokenized =  list(rows) + list(whose_turn) + list(capture_clock) + list(halfmove_clock)
