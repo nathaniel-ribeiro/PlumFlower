@@ -1,12 +1,8 @@
 import re
 
-FEN_METADATA_REGEX = re.compile(
-    r"^([wb]) - - (\d+) (\d+)$"
-)
-
 class BoardTokenizer:
     def __init__(self):
-        pass
+        self.metadata_regex = re.compile(r"^([wb]) - - (\d+) (\d+)$")
 
     def encode(self, fen_batch):
         tokenized_batch = [None] * len(fen_batch)
@@ -18,14 +14,14 @@ class BoardTokenizer:
             # use e and E for black and red elephants to disambiguate from whose turn to move
             rows = rows.replace("b", "e").replace("B", "E")
             
-            m = FEN_METADATA_REGEX.match(metadata)
+            m = self.metadata_regex.match(metadata)
             whose_move = m.group(1)
             # left pad with zeros to ensure fixed length
             capture_clock = m.group(2).zfill(2)
             halfmove_clock = m.group(3).zfill(3)
             
             tokenized = list(rows) + list(whose_move) + list(capture_clock) + list(halfmove_clock)
-            # 90 squares + 1 token whose move + 2 digits for capture clock + 3 digits for halfmove clock = 95 tokens
+            # 90 squares + 1 token whose move + 2 digits for capture clock + 3 digits for halfmove clock = 96 tokens
             assert len(tokenized) == 96
             tokenized_batch[i] = tokenized
         return tokenized_batch
