@@ -51,13 +51,15 @@ def worker(args):
 
     out_path = os.path.join(config.DATA_DIR, f"annotated_worker_{me}.csv")
     with open(out_path, "w", encoding="utf-8") as f:
-        f.write("Game ID,FEN,Evaluation\n")
+        f.write("Game ID,FEN,CP,Win_Probability,Draw_Probability,Lose_Probability\n")
         for idx in indices:
-            game = games[idx]   # games is global and already in memory
-            boards, evals = annotate_game(game, engine=engine,
+            game = games[idx]
+            engine.new_game()
+            boards, evaluations = annotate_game(game, engine=engine,
                                           think_time=config.PIKAFISH_MOVETIME_MS)
-            for fen, val in zip(boards, evals):
-                f.write(f"{game.id},{fen},{val}\n")
+            for fen, evaluation in zip(boards, evaluations):
+                cp, win, draw, loss = evaluation
+                f.write(f"{game.id},{fen},{cp},{win},{draw},{loss}\n")
             f.flush()
     engine.quit()
     return out_path
@@ -77,7 +79,7 @@ aggregated_path = f"{config.DATA_DIR}/annotated_games.csv"
 
 # combine results of workers
 with open(aggregated_path, "w", encoding="utf-8") as fout:
-    fout.write("Game ID,FEN,Evaluation\n")
+    fout.write("Game ID,FEN,CP,Win_Probability,Draw_Probability,Lose_Probability\n")
 
     for tmp_path in partial_files:
         with open(tmp_path, "r", encoding="utf-8") as fin:
@@ -91,4 +93,4 @@ for f in partial_files:
 # deduplicate board states
 final_path = f"{config.DATA_DIR}/annotated_games_deduplicated.csv"
 # specify schema to be all strings since evaluation can be a number or "M..."
-pl.scan_csv(aggregated_path, schema={"Game ID": pl.String, "FEN": pl.String, "Evaluation": pl.String}).unique(subset=["FEN"]).collect(engine="streaming").write_csv(final_path)
+pl.scan_csv(aggregated_path, schema={"Game ID": pl.String, "FEN": pl.String, "CP": pl.String, "Win_Probability": pl.Float32, "Draw_Probability": pl.Float32, "Lose_Probability": pl.Float32}).unique(subset=["FEN"]).collect(engine="streaming").write_csv(final_path)
