@@ -2,15 +2,11 @@ import subprocess
 from game import Game
 import re
 from oracle import annotate_game, PikafishEngine
-import pandas as pd
 import config
 from tqdm import tqdm
-import multiprocessing as mp
 from multiprocessing import Pool
-import time
 import os
 import shutil
-import polars as pl
 import math
 
 # extract all PGN game files
