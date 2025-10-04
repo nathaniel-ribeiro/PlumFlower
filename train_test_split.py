@@ -22,6 +22,6 @@ if __name__ == "__main__":
     val_df.drop_duplicates(subset=['FEN'], inplace=True)
     test_df.drop_duplicates(subset=['FEN'], inplace=True)
 
-    train_df.to_csv(f'{config.DATA_DIR}/train.csv')
-    val_df.to_csv(f'{config.DATA_DIR}/val.csv')
-    test_df.to_csv(f'{config.DATA_DIR}/test.csv')
+    train_df.to_csv(f'{config.DATA_DIR}/train.csv', index=False)
+    val_df.to_csv(f'{config.DATA_DIR}/val.csv', index=False)
+    test_df.to_csv(f'{config.DATA_DIR}/test.csv', index=False)
