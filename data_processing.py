@@ -2,15 +2,11 @@ import subprocess
 from game import Game
 import re
 from oracle import annotate_game, PikafishEngine
-import pandas as pd
 import config
 from tqdm import tqdm
-import multiprocessing as mp
 from multiprocessing import Pool
-import time
 import os
 import shutil
-import polars as pl
 import math
 
 # extract all PGN game files
@@ -89,8 +85,3 @@ with open(aggregated_path, "w", encoding="utf-8") as fout:
 # cleanup
 for f in partial_files:
     os.remove(f)
-
-# deduplicate board states
-final_path = f"{config.DATA_DIR}/annotated_games_deduplicated.csv"
-# specify schema to be all strings since evaluation can be a number or "M..."
-pl.scan_csv(aggregated_path, schema={"Game ID": pl.String, "FEN": pl.String, "CP": pl.String, "Win_Probability": pl.Float32, "Draw_Probability": pl.Float32, "Lose_Probability": pl.Float32}).unique(subset=["FEN"]).collect(engine="streaming").write_csv(final_path)
