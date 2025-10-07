@@ -29,15 +29,7 @@ def Full_Puzzle_Test():
 
         fen = engine.get_fen_after_moves(preset)
 
-        #Consider only 1 side from the solution sequence
-        puzzle_solved = True
-        for i in range(0,len(solution),2):
-            best_move = engine.get_best_move(config.PIKAFISH_MOVETIME_MS)
-            if best_move != solution[i]:
-                puzzle_solved = False
-                break
-            preset.append(best_move)
-            engine.play_moves(fen,tuple(solution[:i+2]))
+        puzzle_solved = Solve_Puzzle(engine,fen,solution,"Change Later")
 
         result_log = "Puzzle "+ str(Puzzle_Count) + " | pid = " + pid #+ " | category = " + group["category"].iloc[0]
 
@@ -81,11 +73,18 @@ def Puzzle_Test(pid):
 
     fen = engine.get_fen_after_moves(preset)
     print(fen)
+    
+    puzzle_solved = Solve_Puzzle(engine,fen,solution,"Change Later")
 
+    if(puzzle_solved): print("Success")
+    else:print("Fail")
+        
+    engine.quit()
+
+#Solve a single puzzle with the fen and solution as parameters
+def Solve_Puzzle(engine,fen,solution,puzzle_type):
     engine.new_game()
     engine.set_position(fen)
-        
-    #Consider only 1 side from the solution sequence
     puzzle_solved = True
     for i in range(0,len(solution),2):
         best_move = engine.get_best_move(config.PIKAFISH_MOVETIME_MS)
@@ -96,11 +95,8 @@ def Puzzle_Test(pid):
             puzzle_solved = False
             break
         engine.play_moves(fen,tuple(solution[:i+2]))
-
-    if(puzzle_solved): print("Success")
-    else:print("Fail")
-        
-    engine.quit()
+     
+    return puzzle_solved
 
 #No arg : run all
 #-a : run all
