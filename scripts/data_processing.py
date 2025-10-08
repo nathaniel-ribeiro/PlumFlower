@@ -1,5 +1,5 @@
 import subprocess
-from game import Game
+from scripts.game import Game
 import re
 from oracle import annotate_game, PikafishEngine
 import config
