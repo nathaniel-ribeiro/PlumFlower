@@ -87,6 +87,15 @@ class PikafishEngine:
                 break
         return fen
 
+    def is_checkmate(self, think_time):
+        self.send(f"go movetime {think_time}")
+        lines = self._wait_for("bestmove")
+        for line in lines:
+            line = line.strip()
+            if "score mate 0" in line:
+                return True
+        return False
+
     def get_fen_after_moves(self, moves):
         self.setup_game(moves)
         self.send("d")
