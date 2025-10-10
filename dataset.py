@@ -18,10 +18,9 @@ class AnnotatedBoardsDataset(torch.utils.data.Dataset):
         self.vocab_to_idx = dict(zip(self.vocab, range(len(self.vocab))))
     
     def horizontal_flip(self, fen):
-        print(fen)
-        board, metadata = fen.split(" ", 2)
+        board, metadata = fen.split(" ", 1)
         rows = board.split("/")
-        rows_flipped = [row.reverse() for row in rows]
+        rows_flipped = [row[::-1] for row in rows]
         board_flipped = "/".join(rows_flipped)
         fen_flipped = board_flipped + " " + metadata
         return fen_flipped
@@ -36,8 +35,8 @@ class AnnotatedBoardsDataset(torch.utils.data.Dataset):
         evaluation = np.array([win_prob, draw_prob, lose_prob], dtype=np.half)
         evaluation = torch.from_numpy(evaluation)
 
-        # if np.random.rand() <= self.board_flip_probability:
-        #     fen = self.horizontal_flip(fen)
+        if np.random.rand() <= self.board_flip_probability:
+            fen = self.horizontal_flip(fen)
 
         fen_tokenized = self.tokenizer.encode(fen)
         
@@ -54,5 +53,7 @@ class AnnotatedBoardsDataset(torch.utils.data.Dataset):
         return fen_tokenized_indices, evaluation
 
 if __name__ == "__main__":
-    ds = AnnotatedBoardsDataset("./data/train.csv", 0.5, 0.0)
-    print(ds[0])
+    train_ds = AnnotatedBoardsDataset("./data/train.csv", 0.5, 0.1)
+    print(train_ds[42])
+    print(train_ds[42])
+    print(train_ds[42])
