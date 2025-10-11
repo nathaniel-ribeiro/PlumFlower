@@ -9,7 +9,6 @@ N_EPOCHS = 1
 BATCH_SIZE = 1024
 LEARNING_RATE = 1e-4
 BOARD_FLIP_P = 0.5
-TOKEN_MASKING_P = 0.0
 D_MODEL = 256
 VOCAB_SIZE = 29
 MAX_SEQ_LEN = 97
@@ -44,7 +43,9 @@ for epoch in range(N_EPOCHS):
         outputs = model(inputs).to(device)
         # KL Divergence expects probabilities in the log-space
         log_outputs = torch.log(outputs + 1e-9)
-        loss = criterion(log_outputs, labels)
+        # smooth targets to reduce overconfidence in totally winning or dead lost positions
+        smoothed_labels = (1 - LABEL_SMOOTHING) * labels + LABEL_SMOOTHING / labels.size(-1)
+        loss = criterion(log_outputs, smoothed_labels)
         loss.backward()
         optimizer.step()
 
