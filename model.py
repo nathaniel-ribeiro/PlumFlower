@@ -43,6 +43,7 @@ class TransformerClassifier(nn.Module):
         x = self.token_embedding(x)
         x = self.pos_encoding(x)
         x = self.encoder(x)
-        x = self.classifier(x)
-        x = torch.softmax(x, dim=-1)
-        return x
+        x = x.mean(dim=1)
+        logits = self.classifier(x)
+        probs = torch.softmax(logits, dim=-1)
+        return probs

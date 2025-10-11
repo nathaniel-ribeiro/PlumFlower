@@ -32,7 +32,7 @@ class AnnotatedBoardsDataset(torch.utils.data.Dataset):
         row = self.df.iloc[idx]
         # ignore game id and cp evaluation
         _, fen, _, win_prob, draw_prob, lose_prob = tuple(row)
-        evaluation = np.array([win_prob, draw_prob, lose_prob], dtype=np.half)
+        evaluation = np.array([win_prob, draw_prob, lose_prob])
         evaluation = torch.from_numpy(evaluation)
 
         if np.random.rand() <= self.board_flip_probability:

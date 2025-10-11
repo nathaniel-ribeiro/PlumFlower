@@ -6,7 +6,7 @@ from model import TransformerClassifier
 from tqdm import tqdm
 
 N_EPOCHS = 1
-BATCH_SIZE = 512
+BATCH_SIZE = 1024
 LEARNING_RATE = 1e-4
 BOARD_FLIP_P = 0.5
 TOKEN_MASKING_P = 0.0
@@ -30,8 +30,7 @@ test_loader = torch.utils.data.DataLoader(val_ds, batch_size=BATCH_SIZE, shuffle
 #TODO: add decode() method to tokenizer so conversion to token indices can happen in tokenizer
 model = TransformerClassifier(VOCAB_SIZE, MAX_SEQ_LEN).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
-criterion_train = torch.nn.CrossEntropyLoss(label_smoothing=LABEL_SMOOTHING).to(device)
-criterion_val = torch.nn.CrossEntropyLoss().to(device)
+criterion = torch.nn.KLDivLoss(reduction="batchmean")
 
 for epoch in range(N_EPOCHS):
     model.train()
@@ -44,7 +43,9 @@ for epoch in range(N_EPOCHS):
 
         optimizer.zero_grad()
         outputs = model(inputs).to(device)
-        loss = criterion_train(outputs, labels)
+        # KL Divergence expects probabilities in the log-space
+        log_outputs = torch.log(outputs + 1e-9)
+        loss = criterion(log_outputs, labels)
         loss.backward()
         optimizer.step()
 
@@ -62,7 +63,9 @@ for epoch in range(N_EPOCHS):
         for inputs, labels in tqdm(val_loader):
             inputs, labels = inputs.to(device), labels.to(device)
             outputs = model(inputs).to(device)
-            loss = criterion_val(outputs, labels)
+            # KL Divergence expects probabilities in the log-space
+            log_outputs = torch.log(outputs + 1e-9)
+            loss = criterion(log_outputs, labels)
 
             val_loss += loss.item() * inputs.size(0)
             total += inputs.size(0)
