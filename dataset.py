@@ -4,9 +4,9 @@ import numpy as np
 from tokenizer import BoardTokenizer
 
 class AnnotatedBoardsDataset(torch.utils.data.Dataset):
-    def __init__(self, path_to_csv, board_flip_probability=0.0, mask_token_probability=0.0):
+    def __init__(self, path_to_csv, tokenizer, board_flip_probability=0.0, mask_token_probability=0.0):
         self.df = pd.read_csv(path_to_csv)
-        self.tokenizer = BoardTokenizer()
+        self.tokenizer = tokenizer
         self.board_flip_probability = board_flip_probability
         self.mask_token_probability = mask_token_probability
         self.vocab = ['K', 'A', 'E', 'R', 'C', 'N', 'P',
@@ -48,12 +48,6 @@ class AnnotatedBoardsDataset(torch.utils.data.Dataset):
                 fen_tokenized[i] = "[MASK]" if np.random.rand() <= self.mask_token_probability else fen_tokenized[i]
         
         # convert tokens to their corresponding indices in the vocab, uint8 ok here since |V| \leq 256
-        fen_tokenized_indices = np.array([self.vocab_to_idx[token] for token in fen_tokenized], dtype=np.uint8)
+        fen_tokenized_indices = np.array([self.vocab_to_idx[token] for token in fen_tokenized])
         fen_tokenized_indices = torch.from_numpy(fen_tokenized_indices)
         return fen_tokenized_indices, evaluation
-
-if __name__ == "__main__":
-    train_ds = AnnotatedBoardsDataset("./data/train.csv", 0.5, 0.1)
-    print(train_ds[42])
-    print(train_ds[42])
-    print(train_ds[42])
