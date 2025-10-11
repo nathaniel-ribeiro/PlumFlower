@@ -65,7 +65,7 @@ for epoch in range(N_EPOCHS):
         total += inputs.size(0)
     
     avg_train_loss = train_loss / total
-    print(avg_train_loss)
+    print(f"Average train loss: {avg_train_loss}")
     
     # validate
     val_loss = 0.0
@@ -83,4 +83,6 @@ for epoch in range(N_EPOCHS):
             total += inputs.size(0)
 
     avg_val_loss = val_loss / total
-    print(avg_val_loss)
+    print(f"Average validation loss: {avg_val_loss}")
+
+torch.save(model.state_dict(), "/models/vanilla_transformer_1.pt")
