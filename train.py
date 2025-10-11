@@ -5,14 +5,26 @@ from tokenizer import BoardTokenizer
 from model import TransformerClassifier
 from tqdm import tqdm
 
+# TODO: move these args into a config file
 N_EPOCHS = 1
 BATCH_SIZE = 1024
+# Initial learning rate for Adam optimizer
 LEARNING_RATE = 1e-4
+# probability of horizontally flipping the board for data augmentation
+# Range: [0.0, 1.0]
 BOARD_FLIP_P = 0.5
+# embedding dimension
 D_MODEL = 256
-VOCAB_SIZE = 29
+# number of heads in each transformer encoder layer.
+N_HEADS = 8
+# number of layers in the transformer encoder.
+N_LAYERS = 8
+# 90 tokens for board + 1 token for whose turn + 3 tokens halfmove clock + 3 tokens fullmove clock
 MAX_SEQ_LEN = 97
-LABEL_SMOOTHING = 0.0
+# blends Pikafish WDL probabilities with a uniform distribution.
+# Range: [0.0, 1.0]
+# 0.0 is no smoothing, 1.0 smooths all targets to be the uniform distribution
+LABEL_SMOOTHING = 0.05
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 tokenizer = BoardTokenizer(MAX_SEQ_LEN)
