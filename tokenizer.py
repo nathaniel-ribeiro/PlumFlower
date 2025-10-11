@@ -1,8 +1,18 @@
 import re
+import numpy as np
 
 class BoardTokenizer:
-    def __init__(self):
+    def __init__(self, expected_seq_len):
+        self.expected_seq_len = expected_seq_len
         self.metadata_regex = re.compile(r"^([wb]) - - (\d+) (\d+)$")
+
+        self.vocab = ['K', 'A', 'E', 'R', 'C', 'N', 'P',
+                      'k', 'a', 'e', 'r', 'c', 'n', 'p',
+                      '0', '1', '2', '3', '4', '5', '6',
+                      '7', '8', '9', '0', 'w', 'b', '.',
+                      '[MASK]']
+        self.vocab_size = len(self.vocab)
+        self.token_to_idx = dict(zip(self.vocab, range(len(self.vocab))))
 
     def encode(self, fen):
         board, metadata = fen.split(" ", 1)
@@ -19,8 +29,6 @@ class BoardTokenizer:
         halfmove_clock = m.group(3).zfill(3)
             
         tokenized = list(rows) + list(whose_move) + list(capture_clock) + list(halfmove_clock)
-        # 90 squares + 1 token whose move + 3 digits for capture clock + 3 digits for fullmove clock = 96 tokens
-        if(len(tokenized) != 97):
-            print(fen)
-            raise ValueError(f"Expected tokenized FEN to be 97 chars, got {len(tokenized)}")
+        tokenized = np.array([self.token_to_idx[token] for token in tokenized])
+        assert tokenized.shape[0] == self.expected_seq_len, f"Expected tokenized FEN to be {self.expected_seq_len} chars, got {tokenized.shape[0]}"
         return tokenized

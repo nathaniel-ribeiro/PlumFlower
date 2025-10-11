@@ -16,9 +16,9 @@ MAX_SEQ_LEN = 97
 LABEL_SMOOTHING = 0.0
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
-tokenizer = BoardTokenizer()
+tokenizer = BoardTokenizer(MAX_SEQ_LEN)
 
-train_ds = AnnotatedBoardsDataset(f'{config.DATA_DIR}/train.csv', tokenizer, BOARD_FLIP_P, TOKEN_MASKING_P)
+train_ds = AnnotatedBoardsDataset(f'{config.DATA_DIR}/train.csv', tokenizer, BOARD_FLIP_P)
 val_ds = AnnotatedBoardsDataset(f'{config.DATA_DIR}/val.csv', tokenizer)
 test_ds = AnnotatedBoardsDataset(f'{config.DATA_DIR}/test.csv', tokenizer)
 
@@ -26,8 +26,7 @@ train_loader = torch.utils.data.DataLoader(train_ds, batch_size=BATCH_SIZE, shuf
 val_loader = torch.utils.data.DataLoader(val_ds, batch_size=BATCH_SIZE, shuffle=False)
 test_loader = torch.utils.data.DataLoader(val_ds, batch_size=BATCH_SIZE, shuffle=False)
 
-#TODO: don't hardcode vocab size, move to global scope instead of being part of dataset?
-#TODO: add decode() method to tokenizer so conversion to token indices can happen in tokenizer
+VOCAB_SIZE = tokenizer.vocab_size
 model = TransformerClassifier(VOCAB_SIZE, MAX_SEQ_LEN).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
 criterion = torch.nn.KLDivLoss(reduction="batchmean")
