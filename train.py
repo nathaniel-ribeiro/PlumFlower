@@ -12,7 +12,7 @@ BOARD_FLIP_P = 0.5
 TOKEN_MASKING_P = 0.0
 D_MODEL = 256
 VOCAB_SIZE = 29
-MAX_SEQ_LEN = 96
+MAX_SEQ_LEN = 97
 LABEL_SMOOTHING = 0.0
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
