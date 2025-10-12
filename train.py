@@ -4,10 +4,12 @@ import config
 from tokenizer import BoardTokenizer
 from model import TransformerClassifier
 from tqdm import tqdm
+import numpy as np
 
 # TODO: move these args into a config file
-N_EPOCHS = 1
-BATCH_SIZE = 1024
+MAX_EPOCHS = 100
+BATCH_SIZE = 2048
+PATIENCE = 3
 # Initial learning rate for Adam optimizer
 LEARNING_RATE = 1e-4
 # probability of horizontally flipping the board for data augmentation
@@ -42,13 +44,15 @@ model = TransformerClassifier(VOCAB_SIZE, MAX_SEQ_LEN).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
 criterion = torch.nn.KLDivLoss(reduction="batchmean")
 
-for epoch in range(N_EPOCHS):
+old_val_loss = np.inf
+patience = PATIENCE
+for epoch in tqdm(range(MAX_EPOCHS)):
     model.train()
     train_loss = 0.0
     total = 0
 
     # train
-    for inputs, labels in tqdm(train_loader):
+    for inputs, labels in train_loader:
         inputs, labels = inputs.to(device), labels.to(device)
 
         optimizer.zero_grad()
@@ -65,14 +69,13 @@ for epoch in range(N_EPOCHS):
         total += inputs.size(0)
     
     avg_train_loss = train_loss / total
-    print(f"Average train loss: {avg_train_loss}")
     
     # validate
     val_loss = 0.0
     total = 0
     model.eval()
     with torch.no_grad():
-        for inputs, labels in tqdm(val_loader):
+        for inputs, labels in val_loader:
             inputs, labels = inputs.to(device), labels.to(device)
             outputs = model(inputs).to(device)
             # KL Divergence expects probabilities in the log-space
@@ -83,6 +86,14 @@ for epoch in range(N_EPOCHS):
             total += inputs.size(0)
 
     avg_val_loss = val_loss / total
-    print(f"Average validation loss: {avg_val_loss}")
+    if avg_val_loss < old_val_loss:
+        patience = PATIENCE
+    else:
+        patience -= 1
+    
+    if patience <= 0:
+        break
 
-torch.save(model.state_dict(), "/models/vanilla_transformer_1.pt")
+    old_val_loss = avg_val_loss
+
+torch.save(model.state_dict(), "./models/vanilla_transformer_1.pt")
