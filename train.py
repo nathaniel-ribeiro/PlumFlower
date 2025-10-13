@@ -47,6 +47,7 @@ criterion = torch.nn.KLDivLoss(reduction="batchmean")
 
 old_val_loss = np.inf
 patience = PATIENCE
+scaler = torch.amp.GradScaler(device)
 for epoch in range(MAX_EPOCHS):
     model.train()
     train_loss = 0.0
@@ -64,8 +65,9 @@ for epoch in range(MAX_EPOCHS):
             # smooth targets to reduce overconfidence in totally winning or dead lost positions
             smoothed_labels = (1 - LABEL_SMOOTHING) * labels + LABEL_SMOOTHING / labels.size(-1)
             loss = criterion(log_outputs, smoothed_labels)
-        loss.backward()
-        optimizer.step()
+        scaler.scale(loss).backward()
+        scaler.step(optimizer).step()
+        scaler.update()
 
         train_loss += loss.item() * inputs.size(0)
         total += inputs.size(0)
