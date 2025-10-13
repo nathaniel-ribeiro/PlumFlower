@@ -59,7 +59,7 @@ for epoch in range(MAX_EPOCHS):
 
         optimizer.zero_grad()
         with torch.autocast(device_type=device):
-            outputs = model(inputs).to(device)
+            outputs = model(inputs)
             # KL Divergence expects probabilities in the log-space
             log_outputs = torch.log(outputs + 1e-9)
             # smooth targets to reduce overconfidence in totally winning or dead lost positions
@@ -82,7 +82,7 @@ for epoch in range(MAX_EPOCHS):
         with torch.autocast(device_type=device):
             for inputs, labels in val_loader:
                 inputs, labels = inputs.to(device), labels.to(device)
-                outputs = model(inputs).to(device)
+                outputs = model(inputs)
                 # KL Divergence expects probabilities in the log-space
                 log_outputs = torch.log(outputs + 1e-9)
                 loss = criterion(log_outputs, labels)
