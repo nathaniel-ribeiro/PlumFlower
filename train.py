@@ -66,7 +66,7 @@ for epoch in range(MAX_EPOCHS):
             smoothed_labels = (1 - LABEL_SMOOTHING) * labels + LABEL_SMOOTHING / labels.size(-1)
             loss = criterion(log_outputs, smoothed_labels)
         scaler.scale(loss).backward()
-        scaler.step(optimizer).step()
+        scaler.step(optimizer)
         scaler.update()
 
         train_loss += loss.item() * inputs.size(0)
