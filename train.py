@@ -5,6 +5,16 @@ from tokenizer import BoardTokenizer
 from model import TransformerClassifier
 import numpy as np
 import time
+import random
+
+device = "cuda" if torch.cuda.is_available() else "cpu"
+torch.manual_seed(42)
+if device == "cuda": 
+    torch.cuda.manual_seed(42)
+    torch.cuda.manual_seed_all(42)
+random.seed(42)
+np.random.seed(42)
+torch.backends.cudnn.deterministic = True
 
 # TODO: move these args into a config file
 MAX_EPOCHS = 100
@@ -30,14 +40,11 @@ MAX_SEQ_LEN = 97
 LABEL_SMOOTHING = 0.05
 DROPOUT = 0.2
 
-device = "cuda" if torch.cuda.is_available() else "cpu"
 tokenizer = BoardTokenizer(MAX_SEQ_LEN)
 
 train_ds = AnnotatedBoardsDataset(f'{config.DATA_DIR}/train.csv', tokenizer, BOARD_FLIP_P)
 val_ds = AnnotatedBoardsDataset(f'{config.DATA_DIR}/val.csv', tokenizer)
 test_ds = AnnotatedBoardsDataset(f'{config.DATA_DIR}/test.csv', tokenizer)
-
-print("Created datasets!")
 
 train_loader = torch.utils.data.DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True)
 val_loader = torch.utils.data.DataLoader(val_ds, batch_size=BATCH_SIZE, shuffle=False)
