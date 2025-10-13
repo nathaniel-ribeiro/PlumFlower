@@ -27,6 +27,7 @@ MAX_SEQ_LEN = 97
 # Range: [0.0, 1.0]
 # 0.0 is no smoothing, 1.0 smooths all targets to be the uniform distribution
 LABEL_SMOOTHING = 0.05
+DROPOUT = 0.25
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 tokenizer = BoardTokenizer(MAX_SEQ_LEN)
@@ -40,13 +41,13 @@ val_loader = torch.utils.data.DataLoader(val_ds, batch_size=BATCH_SIZE, shuffle=
 test_loader = torch.utils.data.DataLoader(val_ds, batch_size=BATCH_SIZE, shuffle=False)
 
 VOCAB_SIZE = tokenizer.vocab_size
-model = TransformerClassifier(VOCAB_SIZE, MAX_SEQ_LEN).to(device)
+model = TransformerClassifier(VOCAB_SIZE, MAX_SEQ_LEN, D_MODEL, 3, N_LAYERS, N_HEADS, DROPOUT).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
 criterion = torch.nn.KLDivLoss(reduction="batchmean")
 
 old_val_loss = np.inf
 patience = PATIENCE
-for epoch in tqdm(range(MAX_EPOCHS)):
+for epoch in range(MAX_EPOCHS):
     model.train()
     train_loss = 0.0
     total = 0
@@ -56,12 +57,13 @@ for epoch in tqdm(range(MAX_EPOCHS)):
         inputs, labels = inputs.to(device), labels.to(device)
 
         optimizer.zero_grad()
-        outputs = model(inputs).to(device)
-        # KL Divergence expects probabilities in the log-space
-        log_outputs = torch.log(outputs + 1e-9)
-        # smooth targets to reduce overconfidence in totally winning or dead lost positions
-        smoothed_labels = (1 - LABEL_SMOOTHING) * labels + LABEL_SMOOTHING / labels.size(-1)
-        loss = criterion(log_outputs, smoothed_labels)
+        with torch.autocast(device_type=device):
+            outputs = model(inputs).to(device)
+            # KL Divergence expects probabilities in the log-space
+            log_outputs = torch.log(outputs + 1e-9)
+            # smooth targets to reduce overconfidence in totally winning or dead lost positions
+            smoothed_labels = (1 - LABEL_SMOOTHING) * labels + LABEL_SMOOTHING / labels.size(-1)
+            loss = criterion(log_outputs, smoothed_labels)
         loss.backward()
         optimizer.step()
 
@@ -75,25 +77,26 @@ for epoch in tqdm(range(MAX_EPOCHS)):
     total = 0
     model.eval()
     with torch.no_grad():
-        for inputs, labels in val_loader:
-            inputs, labels = inputs.to(device), labels.to(device)
-            outputs = model(inputs).to(device)
-            # KL Divergence expects probabilities in the log-space
-            log_outputs = torch.log(outputs + 1e-9)
-            loss = criterion(log_outputs, labels)
+        with torch.autocast(device_type=device):
+            for inputs, labels in val_loader:
+                inputs, labels = inputs.to(device), labels.to(device)
+                outputs = model(inputs).to(device)
+                # KL Divergence expects probabilities in the log-space
+                log_outputs = torch.log(outputs + 1e-9)
+                loss = criterion(log_outputs, labels)
 
-            val_loss += loss.item() * inputs.size(0)
-            total += inputs.size(0)
+                val_loss += loss.item() * inputs.size(0)
+                total += inputs.size(0)
 
     avg_val_loss = val_loss / total
+    print(f"Losses for epoch {epoch}: \t Train: {avg_train_loss:.3f} \t Val: {avg_val_loss:.3f}")
     if avg_val_loss < old_val_loss:
         patience = PATIENCE
     else:
         patience -= 1
-    
+
     if patience <= 0:
         break
-
     old_val_loss = avg_val_loss
 
-torch.save(model.state_dict(), "./models/vanilla_transformer_1.pt")
+torch.save(model.state_dict(), "./models/rishi.pt")
