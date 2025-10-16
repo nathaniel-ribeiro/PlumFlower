@@ -2,4 +2,3 @@
 *.out
 core.*
 __pycache__/
-logs/
