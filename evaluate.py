@@ -19,8 +19,7 @@ def calculate_spearman_correlation(pi_ranks, ri_ranks):
 
   # map moves to rank
   ri_rank_map = np.zeros((m, len(unique_moves)), dtype=int)
-  for i in range(n):
-      ri_rank_map[i, ri_encoded[i]] = np.arange(m)
+  ri_rank_map[np.arange(n)[:, None], ri_encoded] = np.arange(m)
 
   pi_to_ri_ranks = ri_rank_map[np.arange(n)[:, None], pi_encoded]
 
@@ -34,6 +33,3 @@ def calculate_spearman_correlation(pi_ranks, ri_ranks):
 def collect_evaluation_data():
   pass
 
-pi = np.array([['a', 'b', 'c', 'd']])
-ri = np.array([['b', 'c', 'a', 'd']])
-print(calculate_spearman_correlation(pi, ri))
