@@ -12,3 +12,5 @@ DATA_DIR = "./data"
 PIKAFISH_MOVETIME_MS = 50
 # Stockfish/Pikafish recommends num_cores * 2 - 1
 PIKAFISH_THREADS = (cpu_count() * 2 - 2) // NUM_WORKERS
+
+PATH_TO_NNUE="/home/prithviseri/pikafish.nnue"

@@ -1,6 +1,7 @@
 import re
 from oracle import *
 import threading
+from config import PIKAFISH_THREADS, PATH_TO_NNUE
 
 option_info = {
   "Threads": {"type": "spin", "default": 1, "min": 1, "max": 1024},
@@ -33,17 +34,16 @@ def setoption_handler(cmd):
   print(f"Info string: {option} = {value}")
 
 def live_print_engine_output(engine):
-    def printer():
-        while True:
-            line = engine.output_queue.get()
-            print(line)
-    
-    threading.Thread(target=printer, daemon=True).start()
+  def printer():
+    while True:
+      line = engine.output_queue.get()
+      print(line)
+  
+  threading.Thread(target=printer, daemon=True).start()
 
-engine = PikafishEngine(1)
+engine = PikafishEngine(PIKAFISH_THREADS)
 
-# Skip NNUE to avoid network errors
-engine.send("setoption name EvalFile value /home/prithviseri/pikafish.nnue")
+engine.send(f"setoption name EvalFile value {PATH_TO_NNUE}")
 engine.send("isready")
 engine._wait_for("readyok")
 
@@ -52,22 +52,22 @@ live_print_engine_output(engine)
 
 quit_flag = False
 while not quit_flag:
-    try:
-        cmd = input().strip()
-        if not cmd:
-            continue
+  try:
+    cmd = input().strip()
+    if not cmd:
+        continue
 
-        # Handle quit
-        if cmd.lower() == "quit":
-            quit_flag = True
-            engine.quit()
-            break
-
-        # Send UCI command to engine
-        engine.send(cmd)
-
-    except KeyboardInterrupt:
+    # Handle quit
+    if cmd.lower() == "quit":
         quit_flag = True
         engine.quit()
         break
+
+    # Send UCI command to engine
+    engine.send(cmd)
+
+  except KeyboardInterrupt:
+    quit_flag = True
+    engine.quit()
+    break
   
