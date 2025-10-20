@@ -8,6 +8,7 @@ from argparse import ArgumentParser
 
 SUMMARY_DIR = os.path.expanduser("~/Rishi/data/puzzle_sweeps")
 
+#For puzzle test sweep using Slurm
 def write_summary_row(thinktime, numThreads, success, alt_success, fail, elapsed):
     os.makedirs(SUMMARY_DIR, exist_ok=True)
     total = success + alt_success + fail
@@ -25,6 +26,7 @@ def write_summary_row(thinktime, numThreads, success, alt_success, fail, elapsed
         "elapsed_sec": elapsed
     }]).to_csv(out, index=False)
 
+#Test all puzzles
 def Full_Puzzle_Test(save_results = False, thinktime = 50, numThreads = 8):
     #Read csv
     file_dir = "~/Rishi/data/puzzles_data_5000.csv"
@@ -84,6 +86,7 @@ def Full_Puzzle_Test(save_results = False, thinktime = 50, numThreads = 8):
     write_summary_row(thinktime, numThreads, Success, Alternate_Success, Fail, elapsed)
     engine.quit()
 
+#Test 1 puzzle using given puzzle id
 def Puzzle_Test(pid, thinktime = 50, numThreads = 8):
     #Read csv
     file_dir = "~/Rishi/data/puzzles_data_5000.csv"
@@ -149,8 +152,9 @@ def Check_Alternate_Answer(engine,fen,category,thinktime):
             fen = engine.play_moves(fen,[best_move])
     return engine.is_checkmate(thinktime)
 
-#No arg : run all
-#-a : run all and save results in csv
+#No arg : run all without saving
+#-s : run all and save results in csv
+#-t : for running all tests with given thinktime and threads
 #-p puzzle_id : run just that puzzle printint each move
 def main():
     parser = ArgumentParser(description="Pikafish puzzle solver")
