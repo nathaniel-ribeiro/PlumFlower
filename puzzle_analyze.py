@@ -1,7 +1,6 @@
 import pandas as pd
 from oracle import PikafishEngine
 import config
-from game import Game
 import time
 import os
 from argparse import ArgumentParser
