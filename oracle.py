@@ -116,6 +116,62 @@ class PikafishEngine:
                 return line.split()[1]
         return None
 
+    #set default time=100ms since we are searching n best moves, not 1
+    def get_best_n_moves(self, n, think_time = 100):
+        if not isinstance(n,int):
+            print("number of moves must be integer!")
+            return
+
+        top_moves = [None for i in range(n)]
+
+        try:
+            #set multipv to n
+            self.send("setoption name multipv value "+str(n))
+            self.send(f"go movetime {think_time}")
+            lines = self._wait_for("bestmove")
+            for line in lines:
+                if not (line.startswith("info") and "multipv" in line and "pv" in line):
+                    continue
+            
+                match_multipv = re.search(r"multipv (\d+)", line)
+                if not match_multipv:
+                    continue
+                k = int(match_multipv.group(1))
+
+                #fetch evaluation
+                match_score = re.search(r"score (cp|mate) (-?\d+)", line)
+                score = None
+                numeric_eval = None #for sorting purposes
+                if match_score:
+                    kind, val = match_score.groups()
+                    score = f"{kind} {val}"
+                    if kind == "mate":
+                        m = int(val)
+                        if m > 0:
+                            numeric_eval = 1_000_000 - m
+                        else:
+                            numeric_eval = -1_000_000 + m
+                    else:
+                        numeric_eval = int(val)
+
+                match_pv = re.search(r"\bpv\s+(.+)", line)
+                pv_moves = match_pv.group(1).split() if match_pv else []
+                if not pv_moves:
+                    continue
+                top_moves[k-1]={
+                    "move" : pv_moves[0],
+                    "score" : score,
+                    "numeric_eval" : numeric_eval
+                }
+        finally:
+            #reset multipv to 1
+            self.send("setoption name multipv value 1")
+
+        top_moves.sort(key=lambda x: (x["numeric_eval"] if x["numeric_eval"] is not None else -999999), reverse=True)
+
+        return top_moves
+
+
     def evaluate(self, move_history, think_time):
         '''
         @param move_history: list of moves in long algebraic notation to setup position
