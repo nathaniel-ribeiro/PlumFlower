@@ -130,6 +130,7 @@ class PikafishEngine:
 
         return legal_moves
 
+    #For now, it requires a fen. For start position, input a fen of the startpos
     def get_all_legal_move_successors(self, fen, think_time = 50):
         self.new_game()
         self.set_position(fen)
@@ -141,26 +142,10 @@ class PikafishEngine:
             self.send(f"position fen {fen}")
             self.send(f"go movetime {think_time} searchmoves {move}")
             lines = self._wait_for("bestmove")
-            # n = len(lines)-2
             maxdepth = 0
             final_score = None
             numeric_eval = None #for sorting purposes
 
-            #Fetch score from deepest search where it is not upperbound
-            # if("upperbound" in lines[n]):
-            #     n-=1
-            # line = lines[n]
-            # match_score = re.search(r"score (cp|mate) (-?\d+)", line)
-            # kind, val = match_score.groups()
-            # final_score = f"{kind} {val}"
-            # if kind == "mate":
-            #     m = int(val)
-            #     if m > 0:
-            #         numeric_eval = 1_000_000 - m
-            #     else:
-            #         numeric_eval = -1_000_000 - m
-            # else:
-            #     numeric_eval = int(val)
             for line in lines:
                 if not (line.startswith("info") and "pv" in line):
                     continue
