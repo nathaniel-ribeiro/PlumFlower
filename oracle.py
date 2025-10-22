@@ -116,56 +116,84 @@ class PikafishEngine:
                 return line.split()[1]
         return None
 
-    #set default time=100ms since we are searching n best moves, not 1
-    def get_best_n_moves(self, n, think_time = 100):
-        if not isinstance(n,int):
-            print("number of moves must be integer!")
-            return
-
-        top_moves = [None for i in range(n)]
-
-        try:
-            #set multipv to n
-            self.send("setoption name multipv value "+str(n))
-            self.send(f"go movetime {think_time}")
-            lines = self._wait_for("bestmove")
-            for line in lines:
-                if not (line.startswith("info") and "multipv" in line and "pv" in line):
-                    continue
+    def get_all_legal_moves(self):
+        self.send("go perft 1")
+        lines = self._wait_for("Nodes")
+        legal_moves = []
+        for line in lines:
+            if line.startswith("info") or line.startswith("Nodes") or len(line)==0:
+                continue
+            parts = line.split(":")
             
-                match_multipv = re.search(r"multipv (\d+)", line)
-                if not match_multipv:
+            move = parts[0].strip()
+            legal_moves.append(move)
+
+        return legal_moves
+
+    def get_all_legal_move_successors(self, fen, think_time = 50):
+        self.new_game()
+        self.set_position(fen)
+        legal_moves = self.get_all_legal_moves()
+
+        top_moves = []
+        
+        for move in legal_moves:
+            self.send(f"position fen {fen}")
+            self.send(f"go movetime {think_time} searchmoves {move}")
+            lines = self._wait_for("bestmove")
+            # n = len(lines)-2
+            maxdepth = 0
+            final_score = None
+            numeric_eval = None #for sorting purposes
+
+            #Fetch score from deepest search where it is not upperbound
+            # if("upperbound" in lines[n]):
+            #     n-=1
+            # line = lines[n]
+            # match_score = re.search(r"score (cp|mate) (-?\d+)", line)
+            # kind, val = match_score.groups()
+            # final_score = f"{kind} {val}"
+            # if kind == "mate":
+            #     m = int(val)
+            #     if m > 0:
+            #         numeric_eval = 1_000_000 - m
+            #     else:
+            #         numeric_eval = -1_000_000 - m
+            # else:
+            #     numeric_eval = int(val)
+            for line in lines:
+                if not (line.startswith("info") and "pv" in line):
                     continue
-                k = int(match_multipv.group(1))
+                if "upperbound" in line or "lowerbound" in line:
+                    continue
+
+                currdepth = int(re.search(r"\bdepth (\d+)", line).group(1))
+                if(currdepth < maxdepth):
+                    continue
+                maxdepth = currdepth
 
                 #fetch evaluation
                 match_score = re.search(r"score (cp|mate) (-?\d+)", line)
-                score = None
-                numeric_eval = None #for sorting purposes
                 if match_score:
                     kind, val = match_score.groups()
-                    score = f"{kind} {val}"
+                    final_score = f"{kind} {val}"
                     if kind == "mate":
                         m = int(val)
                         if m > 0:
                             numeric_eval = 1_000_000 - m
                         else:
-                            numeric_eval = -1_000_000 + m
+                            numeric_eval = -1_000_000 - m
                     else:
                         numeric_eval = int(val)
+            
+            new_fen = self.play_moves(fen,[move])
 
-                match_pv = re.search(r"\bpv\s+(.+)", line)
-                pv_moves = match_pv.group(1).split() if match_pv else []
-                if not pv_moves:
-                    continue
-                top_moves[k-1]={
-                    "move" : pv_moves[0],
-                    "score" : score,
-                    "numeric_eval" : numeric_eval
-                }
-        finally:
-            #reset multipv to 1
-            self.send("setoption name multipv value 1")
+            top_moves.append({
+                "move" : move,
+                "score" : final_score,
+                "numeric_eval" : numeric_eval,
+                "fen" : new_fen
+            })
 
         top_moves.sort(key=lambda x: (x["numeric_eval"] if x["numeric_eval"] is not None else -999999), reverse=True)
 
