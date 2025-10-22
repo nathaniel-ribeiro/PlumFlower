@@ -7,7 +7,6 @@ import numpy as np
 import time
 import random
 import argparse
-from tqdm import tqdm
 
 def get_args():
     parser = argparse.ArgumentParser(description="Training configuration options")
@@ -53,7 +52,6 @@ if __name__ == "__main__":
     LABEL_SMOOTHING = args.label_smoothing
     DROPOUT = args.dropout
     SAVE_MODEL = args.save_model
-    print("Read arguments!")
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     torch.manual_seed(42)
@@ -63,7 +61,6 @@ if __name__ == "__main__":
     random.seed(42)
     np.random.seed(42)
     torch.backends.cudnn.deterministic = True
-    print("Removed randomness!")
 
     tokenizer = BoardTokenizer(MAX_SEQ_LEN)
 
@@ -74,7 +71,6 @@ if __name__ == "__main__":
     train_loader = torch.utils.data.DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True)
     val_loader = torch.utils.data.DataLoader(val_ds, batch_size=BATCH_SIZE, shuffle=False)
     test_loader = torch.utils.data.DataLoader(val_ds, batch_size=BATCH_SIZE, shuffle=False)
-    print("Loaded datasets!")
 
     VOCAB_SIZE = tokenizer.vocab_size
     model = TransformerClassifier(VOCAB_SIZE, MAX_SEQ_LEN, D_MODEL, 3, N_LAYERS, N_HEADS, DROPOUT).to(device)
@@ -86,7 +82,6 @@ if __name__ == "__main__":
     old_val_loss = np.inf
     patience = PATIENCE
     scaler = torch.amp.GradScaler(device)
-    print("Starting training!")
     for epoch in range(MAX_EPOCHS):
         model.train()
         train_loss = 0.0
