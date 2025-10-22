@@ -94,7 +94,7 @@ if __name__ == "__main__":
 
         # train
         tick = time.time()
-        for inputs, labels in tqdm(train_loader):
+        for inputs, labels in train_loader:
             inputs, labels = inputs.to(device), labels.to(device)
 
             optimizer.zero_grad()
